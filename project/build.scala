@@ -3,6 +3,7 @@ package tiue
 import sbt._
 import sbt.Keys._
 import play.sbt.PlayScala
+import play.sbt.PlayLayoutPlugin
 
 object Build extends Build{
   val root = Project(id="scadv", base=file("."), settings=Seq(
@@ -17,4 +18,5 @@ object Build extends Build{
     scalacOptions ++= Seq("-feature","-deprecation","-language:postfixOps", "-target:jvm-1.8", "-encoding", "UTF-8")
   ))
   .enablePlugins(PlayScala)
+  .disablePlugins(PlayLayoutPlugin)
 }
