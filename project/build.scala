@@ -9,7 +9,7 @@ object Build extends Build{
     scalaVersion:= "2.11.8",
     resolvers += Resolver.typesafeRepo("releases"),
     libraryDependencies++=Seq(
-      "org.scalaz"      %% "scalaz-core"  % "7.2.8",
+      // "org.scalaz"      %% "scalaz-core"  % "7.2.8",
       "org.scalacheck"  %% "scalacheck"   % "1.13.4"  % "test",
       "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test"
     ),
