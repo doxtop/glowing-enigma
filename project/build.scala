@@ -12,9 +12,10 @@ object Build extends Build{
     resolvers += Resolver.typesafeRepo("releases"),
     routesGenerator := InjectedRoutesGenerator,
     libraryDependencies++=Seq(
+      "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.86",
       // "org.scalaz"      %% "scalaz-core"  % "7.2.8",
       "org.scalacheck"  %% "scalacheck"   % "1.13.4"  % "test",
-      "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test"
+      "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test"      
     ),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions ++= Seq("-feature","-deprecation","-language:postfixOps", "-target:jvm-1.8", "-encoding", "UTF-8")
