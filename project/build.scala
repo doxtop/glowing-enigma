@@ -21,7 +21,6 @@ object Build extends Build{
       "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.0" % "test",
       "com.storm-enroute" %% "scalameter" % "0.7"
-      //"com.storm-enroute" %% "scalameter-core" % "0.7"
     ),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions ++= Seq("-feature","-deprecation","-language:postfixOps", "-target:jvm-1.8", "-encoding", "UTF-8"),

@@ -3,13 +3,15 @@ package adv
 import org.scalatest.FunSpec
 import org.scalatest._
 
-import com.amazonaws.services.dynamodbv2.{AmazonDynamoDB,AmazonDynamoDBClientBuilder}
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.dynamodbv2.model._
-import com.amazonaws.services.dynamodbv2.document._
 import com.amazonaws.waiters._
 
 import collection.JavaConverters._
+
+import play.api.Configuration
+import play.api.inject.guice._
+
+import store._
 
 /*
   just go through dynamodb guideline
@@ -18,41 +20,11 @@ import collection.JavaConverters._
   json doc api provided, but lets try with attributes first
 */
 class KvsSpec extends FunSpec with BeforeAndAfter {
-  org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
-     .asInstanceOf[ch.qos.logback.classic.Logger]
-     .setLevel(ch.qos.logback.classic.Level.WARN)
-
-  val b:AmazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder.standard
-  val endpoint:EndpointConfiguration = new EndpointConfiguration("http://localhost:8000", "")
-  val db:AmazonDynamoDB = b.withEndpointConfiguration(endpoint).build
-
-  // pre model
-  sealed trait Fuel
-  case object Gas extends Fuel
-  case object Diesel extends Fuel
-  
-  case class Car(
-    id:Int, 
-    title:String,
-    fuel:Fuel,
-    price:Int,
-    neu:Boolean,
-    mileage:Option[Int],
-    reg:Option[String])
+  val injector = new GuiceInjectorBuilder().bindings(new TestModule).injector
+  implicit val db = injector.instanceOf[Dba]
 
   // db atttibutes
   type Advert = Map[String, AttributeValue]
-
-  // wrap some aws sdk
-  object Attribute {
-    def apply(s:Any) = s match {
-      case st:String  => new AttributeValue(st)
-      case i:Int      => new AttributeValue().withN(i.toString)
-      case b:Boolean  => new AttributeValue().withBOOL(b)
-      case f:Fuel     => new AttributeValue(f.toString) // scala issue for type check
-      case _          => new AttributeValue().withNULL(true)
-    }
-  }
 
   // demo data
   def uuid() = java.util.UUID.randomUUID.toString.replace("-","")
@@ -80,60 +52,66 @@ class KvsSpec extends FunSpec with BeforeAndAfter {
   } yield item(title, fuel, price, neu)
 
   // to solve beforeAll puzzle
-  before {
-    val request:CreateTableRequest = new CreateTableRequest()
-      .withAttributeDefinitions(new AttributeDefinition("id", ScalarAttributeType.S))
-      .withKeySchema(new KeySchemaElement("id", KeyType.HASH))
-      .withProvisionedThroughput(new ProvisionedThroughput(1.toLong, 1.toLong))
-      .withTableName("test1")
-
-    val t:CreateTableResult = db.createTable(request)
-    val w = db.waiters().tableExists()
-    w.run(new WaiterParameters(new DescribeTableRequest("test1")))
-  }
-
-  after {
-    val req:DeleteTableRequest = new DeleteTableRequest("test1")
-    val d:DeleteTableResult = db.deleteTable(req)
-    val w = db.waiters().tableNotExists()
-    w.run(new WaiterParameters(new DescribeTableRequest("test1")))
-  }
+  before { println(s"${db.createContainer("test1")}") }
+  after  { println(s"${db.deleteContainer("test1")}") }
 
   // to add assertions later
   describe("test store") {
     it("describe the table"){
-      info(s"Limits:  ${db.describeLimits(new DescribeLimitsRequest)}")
-      info(s"Table:   ${db.describeTable("test1")}")
+//      info(s"Limits:  ${db.describeLimits(new DescribeLimitsRequest)}")
+//      info(s"Table:   ${db.describeTable("test1")}")
     }
 
-    it("should have functionality to add car advert;"){
-      items
-        .map(it=>db.putItem(new PutItemRequest("test1",it.asJava)))
-        .map(r=>info(s"$r"))
+    ignore("should have functionality to add car advert;"){
+      // items
+      //   .map(it=>db.putItem(new PutItemRequest("test1",it.asJava)))
+      //   .map(r=>info(s"$r"))
     }
 
-    it("should have functionality to return list of all car adverts") {
-      items.map{ i=>
-        val pr :PutItemRequest  = new PutItemRequest("test1", i.asJava)
-        val pre:PutItemResult   = db.putItem(pr)
-      }
+    it("should have functionality to return list of all car adverts") (pending)
 
-      // val condition:Condition = new Condition()
-      //   .withComparisonOperator(ComparisonOperator.GT.toString)
-      //   .withAttributeValueList(new AttributeValue().withN(""));
-      // val scanFilter = Map("" -> condition)
+    ignore("should have default sorting by **id**") {
+      //items.map(it => db.putItem(new PutItemRequest("test1",it.asJava)))
 
-      val scanRequest:ScanRequest = new ScanRequest("test1")//.withScanFilter(scanFilter.asJava)
-      //Scan read every item in table or secondary index.
-      val sr:ScanResult = db.scan(scanRequest)
-      info(s"${db.scan(scanRequest)}")
+      // so its just need to have the gsi, all data in table same value, 
+      // will not scale at all.
+
+      // 1000 writes, 3000 reads, 10GB size
+      // use index, B.hash = values, B.range = id
+      //projection doens't go to table
+      
+      val query:QueryRequest = new QueryRequest("test1")
+        .withKeyConditionExpression("id = :id1")
+        .withExpressionAttributeValues(Map(":id1" -> Attribute("sss")).asJava)
+        //.set ScanIndexForward: - for sort key
+
+      //info(s"${db.query(query)}")
     }
 
+    it("should have sorting by **title**") (pending)
+    it("should have sorting by **fuel**") (pending)
+    it("should have sorting by **price**") (pending)
+    it("should have sorting by **new**") (pending)
+    it("should have sorting by **mileage**") (pending)
+    it("should have sorting by **first registration**") (pending)
     
-    it("should have optional sorting by any field specified by query parameter, default sorting - by **id**;") (pending)
     it("should have functionality to return data for single car advert by id;")(pending)
     it("shoud have functionality to modify car advert by id;") (pending)
     it("shoud have functionality to delete car advert by id;") (pending)
+
+    ignore ("scan for return list of all car adverts") {
+      // Scan read every item in table or secondary index.
+      // Can't guaranty default sorting order by *id*
+      // Only filter and projection here
+      // sort after receive all elements?
+      // items.map{ i =>
+      //   val pr :PutItemRequest  = new PutItemRequest("test1", i.asJava)
+      //   val pre:PutItemResult   = db.putItem(pr)
+      // }
+      val scanRequest:ScanRequest = new ScanRequest("test1")
+      //info(s"${db.scan(scanRequest)}")
+    }
+
   }
 
 }
