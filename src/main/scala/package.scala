@@ -1,6 +1,9 @@
 /**
  * Defines application types here for now.
  */
+import scalaz._
+import syntax.either._
+
 package object adv {
 
   // application model types
@@ -18,7 +21,7 @@ package object adv {
     reg:Option[String] = None)
 
   // storage types
-  case class Dbe(name:String = "error", msg:String)
-  type Err = Dbe
-  type Res[T] = Either[Err,T]
+  sealed trait Err
+  case class Dbe(name:String = "error", msg:String) extends Err
+  type Res[T] = Err \/ T
 }

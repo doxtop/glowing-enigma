@@ -14,12 +14,17 @@ import collection.JavaConverters._
 import scala.collection._
 import scala.util.{Either,Failure,Success,Try}
 
+
 /**
  * Wrap some functionality of aws-sdk dynamodb client 
  * as database application.
  * 
  */
 class Dynamodb @Inject()(conf:Configuration) extends Dba {
+
+  import scalaz._, Scalaz._
+  //import scalaz.either._
+
   type ContainerInfo = Unit
   type Att = AttributeValue
   //override type Entry = immutable.Map[String, Att]
@@ -32,6 +37,12 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   val b:AmazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder.standard
   implicit val db:AmazonDynamoDB = b.withEndpointConfiguration(endpoint).build
 
+  // convert db service results
+  import scala.util.control.NonFatal
+  def toRes[T](a: => T): Err \/ T = try {
+    \/-(a)
+  } catch { case NonFatal(t) => -\/(Dbe(msg=t.getMessage)) }
+
   /** Generate unique identifier to be used as entries primary key */
   def nextId():String = java.util.UUID.randomUUID.toString.replace("-","")
 
@@ -42,7 +53,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     val req:DescribeTableRequest = new DescribeTableRequest().withTableName(name)
     
     Option(db.describeTable(req)) match {
-      case None => s"table $name doesnt exist"
+      case None => s"table $name doesn't exist"
       case Some(res:DescribeTableResult) => s"${res.getTable}"
     }
   }
@@ -69,10 +80,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     val wp = new WaiterParameters(new DescribeTableRequest(name))
     val w = db.waiters().tableExists
     
-    Try{ db.createTable(request); w.run(wp) } match {
-      case Success(_)   => Right(())
-      case Failure(err) => Left(Dbe(msg = err.getMessage))
-    }
+    toRes {db.createTable(request); w.run(wp)}
   }
 
   /**
@@ -83,60 +91,55 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     val wp = new WaiterParameters(new DescribeTableRequest(name))
     val w = db.waiters().tableNotExists()
     
-    Try{ db.deleteTable(req); w.run(wp) } match {
-      case Success(_)   => Right(())
-      case Failure(err) => Left(Dbe(msg=err.getMessage))
-    }
+    toRes {db.deleteTable(req); w.run(wp)} 
   }
 
   /**
-   *
    */
    def get(name:String, id:String):Res[Entry] = {
-      Try(db.getItem(new GetItemRequest(name, Map("id"->Attribute(id)).asJava))) match {
-        case Success(res:GetItemResult) =>
-          Right(res.getItem.asScala.toMap)
-        case Failure(err) => Left(Dbe(msg=err.getMessage))
-      }
+      var req = new GetItemRequest(name, Map("id"->Attribute(id)).asJava)
+
+      toRes(db.getItem(req)).map(_.getItem.asScala.toMap)
    }
 
   /**
-   * 
    */
   def put(name:String, entry: Entry):Res[Entry] = {
-    Try(db.putItem(new PutItemRequest(name, entry.asJava, ReturnValue.ALL_OLD))) match {
-      case Success(res:PutItemResult) => 
-        Right(Option(res.getAttributes).map(_.asScala.toMap).getOrElse(entry)) // respond: {}
-      case Failure(err) => Left(Dbe(msg=err.getMessage))
-    //ConditionalCheckFailedException
-    //ProvisionedThroughputExceededException
-    //ResourceNotFoundException
-    //ItemCollectionSizeLimitExceededException
-    //InternalServerErrorException
-    }
+    val req = new PutItemRequest(name, entry.asJava, ReturnValue.ALL_OLD)
+
+    toRes(db.putItem(req)).map(r => Option(r.getAttributes).map(_.asScala.toMap).getOrElse(entry))
   }
 
   /**
-   *
    */
   def delete(name:String, id:String):Res[Entry] = {
-    Try(db.deleteItem(new DeleteItemRequest(name, Map("id" -> Attribute(id)).asJava, ReturnValue.ALL_OLD))) match {
-      case Success(res:DeleteItemResult) => 
-        Right(res.getAttributes.asScala.toMap)
-      case Failure(err) => Left(Dbe(msg=err.getMessage))
-    }
+    var req = new DeleteItemRequest(name, Map("id" -> Attribute(id)).asJava, ReturnValue.ALL_OLD)
+
+    toRes(db.deleteItem(req)).map(_.getAttributes.asScala.toMap)
   }
 
+  /**
+   */
   def entries(name:String):Res[List[Entry]] = {
-    val scanRequest:ScanRequest = new ScanRequest("test1").withConsistentRead(true)
+    import scala.annotation.tailrec
+    type Key = java.util.Map[String,AttributeValue]
 
-    Try(db.scan(new ScanRequest(name).withConsistentRead(true))) match {
-      case Success(sr:ScanResult) => 
-        println(s"$sr")
-        val last = Option(sr.getLastEvaluatedKey)
-        Right(sr.getItems.asScala.map(_.asScala.toMap).toList)
-      case Failure(err) => Left(Dbe(msg = err.getMessage))
-    } 
+    val req:ScanRequest = new ScanRequest(name).withLimit(10)
+
+    def scan(req:ScanRequest, acc:List[Entry], last:Option[Key]):Res[List[Entry]] = {
+      val req1 = req.withExclusiveStartKey(last.getOrElse(null))
+
+      toRes (db.scan(req1)).flatMap { s1 =>
+        val list = acc ::: s1.getItems.asScala.map(_.asScala.toMap).toList
+
+          Option(s1.getLastEvaluatedKey) match {
+            case None => \/-(list)
+            case key  => scan(req, list, key)
+          }
+      }
+    }
+
+    scan(req, List.empty, None)
   }
 
   //Create entry as map of atttibutes

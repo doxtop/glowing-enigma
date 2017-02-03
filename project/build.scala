@@ -16,9 +16,10 @@ object Build extends Build{
     routesGenerator := InjectedRoutesGenerator,
     libraryDependencies++=Seq(
       "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.86",
-      // "org.scalaz"      %% "scalaz-core"  % "7.2.8",
+      "org.scalaz"      %% "scalaz-core"  % "7.2.8",
       "org.scalacheck"  %% "scalacheck"   % "1.13.4"  % "test",
       "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test",
+      "org.typelevel" %% "scalaz-scalatest" % "1.1.0" % "test",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.0" % "test",
       "com.storm-enroute" %% "scalameter" % "0.7"
     ),

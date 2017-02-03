@@ -16,11 +16,21 @@ import play.api.inject.guice._
 
 import store._
 
+import scalaz._, Scalaz._
+import org.typelevel.scalatest._
+
 /** 
  * Test Database applicaiton leyer. 
  * Dba engine configurable in Module or inplace in injector here.
  */
-class DbaSpec extends FunSpec with BeforeAndAfter with Matchers with Eventually with SpanSugar{
+class DbaSpec extends FunSpec 
+  with BeforeAndAfter 
+  with Matchers 
+  with Eventually 
+  with SpanSugar 
+  with DisjunctionMatchers 
+  with DisjunctionValues{
+
   val injector = new GuiceInjectorBuilder().bindings(new TestModule).injector
   implicit val db = injector.instanceOf[Dba]
 
@@ -43,8 +53,8 @@ class DbaSpec extends FunSpec with BeforeAndAfter with Matchers with Eventually 
 
     it("should have functionality to add entry"){
       val entry = db.entry("VW Touareg", Diesel, 10, true)
-      val e = db.put("test1", entry)
-      e.right.value should be (entry)
+
+      db.put("test1", entry) should beRight(entry)
     }
 
     it("should have functionality to return data for single entry by id"){
@@ -56,9 +66,7 @@ class DbaSpec extends FunSpec with BeforeAndAfter with Matchers with Eventually 
 
       val pk = id.get._2.asInstanceOf[AttributeValue].getS
 
-      val get = db.get("test1", pk)
-
-      get.right.value should be (entry)
+      db.get("test1", pk) should beRight(entry)
     }
 
     it("shoud have functionality to delete entry by id") {
@@ -67,12 +75,9 @@ class DbaSpec extends FunSpec with BeforeAndAfter with Matchers with Eventually 
       val id = entry.find(_._1 == "id")
       val pk = id.get._2.asInstanceOf[AttributeValue].getS // hide in store
       
-      val del = db.delete("test1", pk)
+      db.delete("test1", pk) should beRight(entry)
       
-      del.right.value should be (entry)
-
-      val check = db.get("table1", pk)
-      check should be ('left)
+      db.get("table1", pk) should be ('left)
     }
 
     it("shoud have functionality to modify entry by id") {
@@ -85,17 +90,20 @@ class DbaSpec extends FunSpec with BeforeAndAfter with Matchers with Eventually 
 
       db.put("test1", upd)
 
-      import PartialFunctionValues._       
-
       val check = db.get("test1", pk)
+      
+      check should beRight(upd) 
 
-      check.right.value.valueAt("fuel") should be (new AttributeValue("Gas"))
-      check.right.value.valueAt("title") should be (new AttributeValue("VW W12"))
-      check.right.value.valueAt("new") should be (new AttributeValue().withBOOL(false))
+      // just demo
+      import PartialFunctionValues._
+      check.value.valueAt("fuel") should be (new AttributeValue("Gas"))
+      check.value.valueAt("title") should be (new AttributeValue("VW W12"))
+      check.value.valueAt("new") should be (new AttributeValue().withBOOL(false))
     }
 
     it("should have functionality to return list of all entries") {
-      db.entries("test1").right.value should be (empty)
+      db.entries("test1").value should be(empty)
+      
 
       println(s"Size:${items.size}")
       val e1 = db.entry("VW Touareg", Diesel, 10, true)
@@ -104,10 +112,13 @@ class DbaSpec extends FunSpec with BeforeAndAfter with Matchers with Eventually 
       val e2 = db.entry("VW Touareg", Diesel, 10, true)
       db.put("test1", e2)
 
+      val e3 = db.entry("VW Touareg", Diesel, 10, true)
+      db.put("test1", e3)
+
       eventually (timeout(2 seconds), interval(200 millis)){ 
-        db.entries("test1").right.value.size should equal(2)
-        db.entries("test1").right.value should contain (e1)
-        db.entries("test1").right.value should contain (e2)
+        db.entries("test1").value.size should equal(3)
+        db.entries("test1").value should contain (e1)
+        db.entries("test1").value should contain (e3)
       }
 
     }
