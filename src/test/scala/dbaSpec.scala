@@ -34,13 +34,13 @@ class DbaSpec extends FunSpec
   val injector = new GuiceInjectorBuilder().bindings(new TestModule).injector
   implicit val db = injector.instanceOf[Dba]
 
-  val r = scala.util.Random
-  val items = for {
-    title <- List("VW Touareg", "Audi A4 Avant")
-    fuel <- Seq(Diesel,Gas)
-    price = r.nextInt
-    neu <- Seq(true, false)
-  } yield db.entry(title, fuel, price, neu, None, None)
+  // val r = scala.util.Random
+  // val items = for {
+  //   title <- List("VW Touareg", "Audi A4 Avant")
+  //   fuel <- Seq(Diesel,Gas)
+  //   price = r.nextInt
+  //   neu <- Seq(true, false)
+  // } yield db.entry(title, fuel, price, neu, None, None)
 
   // to solve beforeAll puzzle
   before { db.createContainer("test1") }
@@ -104,8 +104,6 @@ class DbaSpec extends FunSpec
     it("should have functionality to return list of all entries") {
       db.entries("test1").value should be(empty)
       
-
-      println(s"Size:${items.size}")
       val e1 = db.entry("VW Touareg", Diesel, 10, true)
       db.put("test1", e1)
 

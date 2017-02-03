@@ -14,11 +14,8 @@ import collection.JavaConverters._
 import scala.collection._
 import scala.util.{Either,Failure,Success,Try}
 
-
 /**
- * Wrap some functionality of aws-sdk dynamodb client 
- * as database application.
- * 
+ * Wrap some functionality of aws-sdk dynamodb client as database application.
  */
 class Dynamodb @Inject()(conf:Configuration) extends Dba {
 
@@ -36,12 +33,6 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
 
   val b:AmazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder.standard
   implicit val db:AmazonDynamoDB = b.withEndpointConfiguration(endpoint).build
-
-  // convert db service results
-  import scala.util.control.NonFatal
-  def toRes[T](a: => T): Err \/ T = try {
-    \/-(a)
-  } catch { case NonFatal(t) => -\/(Dbe(msg=t.getMessage)) }
 
   /** Generate unique identifier to be used as entries primary key */
   def nextId():String = java.util.UUID.randomUUID.toString.replace("-","")
