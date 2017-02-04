@@ -169,7 +169,7 @@ class DbaSpec extends FunSpec
       }
     }
 
-    if("should long list, paged list, fails on list") (pending)
-
+    it("should long list, paged list, fails on list") (pending)
+  }
 }
 
