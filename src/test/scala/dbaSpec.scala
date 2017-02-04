@@ -67,6 +67,8 @@ class DbaSpec extends FunSpec
       db.put("test1", entry) should beRight(entry)
     }
 
+    it("check combination of params, fail on wrong input, check types") (pending)
+
     it("should have functionality to return data for single entry by id"){
       val entry = demo()
 
@@ -148,7 +150,7 @@ class DbaSpec extends FunSpec
       }
     }
 
-    ignore("should have functionality to return list of all entries") {
+    it("should have functionality to return list of all entries") {
       db.entries("test1").value should be(empty)
       
       val e1 = demo()
@@ -165,9 +167,9 @@ class DbaSpec extends FunSpec
         db.entries("test1").value should contain (e1)
         db.entries("test1").value should contain (e3)
       }
-
     }
-  }
+
+    if("should long list, paged list, fails on list") (pending)
 
 }
 
