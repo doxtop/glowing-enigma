@@ -125,6 +125,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   }
 
   /**
+   * Returns an entry with specified `id` from table by `name`.
    */
    def get(name:String, id:String):Res[Entry] = {
       var req = new GetItemRequest(name, Map("id"-> St(id).pickle).asJava)
@@ -132,23 +133,36 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
       toRes(db.getItem(req))
         // drop null with result with disjunction 
         // where all right things always on the right
-        .map{i => Option(i.getItem).toRightDisjunction(NotFound(s"${req.getKey}"))}
+        .map{i => Option(i.getItem) \/> NotFound(s"${req.getKey}")} // toRightDisjunction
         .flatMap(identity)
         .map(_.asScala.toMap)
         .map(_.map{case (k,v) => k-> v.unpickle}.filter(_._2 != Nl()))
    }
 
   /**
+   * Put the dba `entry` to table specified by `name`.
    */
   def put(name:String, entry: Entry):Res[Entry] = {
     val m1:Map[String, AttributeValue] = entry.map{case (k,v) => (k, v.pickle)}
 
+    // allowed to specify return values by ALL_OLD but this is not guranted
     val req = new PutItemRequest(name, m1.asJava, ReturnValue.ALL_OLD)
+    
+    println(s"Going to put the shit: $req")
+    // will get the values that where replaced!
 
-    toRes(db.putItem(req))
-      .map(r => Option(r.getAttributes).map(_.asScala.toMap)
+    val opRes = toRes(db.putItem(req))
+      // allowed to specify return values by ALL_OLD but this is not guranted
+      // all this may be empty (and will be), so just go with and origin entry 
+      .map(r => Option(r.getAttributes) \/> NotGranted(s"${req.getReturnValues}"))
+      .flatMap(identity)
+      .map(_.asScala.toMap)
       .map(_.map{case (k,v) => k-> v.unpickle}.filter(_._2 != Nl()))
-      .getOrElse(entry))
+
+    opRes match {
+      case -\/(NotGranted(_)) => entry.right 
+      case _ => opRes
+    }
   }
 
   /**

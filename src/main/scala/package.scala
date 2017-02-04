@@ -12,6 +12,8 @@ package object adv {
   sealed trait Err
   case class Dbe(name:String = "error", msg:String) extends Err
   case class NotFound(msg:String) extends Err
+  case class NotGranted(msg:String) extends Err
+
   type Res[T] = Err \/ T
 
   // convert from try to storage result
