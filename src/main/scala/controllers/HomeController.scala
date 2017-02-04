@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{Action,Controller,BodyParsers}
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -17,6 +17,7 @@ import adv._
 import scalaz._, Scalaz._
 
 import scala.concurrent.{ExecutionContext,Future}
+
 /**
   * Service controller
   * Generator fro Action DSL to speak with service by the language of
@@ -46,8 +47,7 @@ class HomeController @Inject()(@Named("car") service: Api[Car])(implicit ec: Exe
     def reads(js:JsValue) = 
       JsSuccess(Diesel)
   }
-  //implicit val fuelReads:Reads[Fuel] 
-
+ 
   implicit val carReads:Reads[Car] = (
     (JsPath \ "id").read[String] and
     (JsPath \ "title").read[String] and
@@ -65,24 +65,13 @@ class HomeController @Inject()(@Named("car") service: Api[Car])(implicit ec: Exe
   def exist(id: Int): Unit = ???
   def get(id: Int): Unit = ???
   
-  def post() = Action.async(parse.json) { implicit r =>
-    //val data = Car("1002","Camaro SS", Gas, 100, true)
-    //println(s"${r.body}")
-    // from json
-    val c:JsResult[Car] = Json.fromJson[Car](r.body)
-
-    // include validation here
-    println(s"Result: $c")
-    // fold will work with validation
-    c.map{ car =>
-      println(s"parsed car: $car")
-      service.post(car).map(r => Ok(Json.toJson(r)))
-    }.getOrElse{
-      println("real shit and bed request")
-      BadRequest(Json.toJson(
-        Map("status"->"shit")
-      )).point[Future]
-    }
+  def validateJson[A:Reads] = BodyParsers.parse.json.validate(
+    _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
+  )
+  
+  def post() = Action.async(validateJson[Car]) { implicit r =>
+    service.post(r.body)
+      .map(_.fold(l=> Ok(Json.toJson(l.toString)), r => Ok(Json.toJson(r))))
   }
 
   def get = Action.async{ implicit r =>

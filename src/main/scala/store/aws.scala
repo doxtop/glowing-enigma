@@ -14,18 +14,52 @@ import collection.JavaConverters._
 import scala.collection.immutable.Map
 import scala.util.{Either,Failure,Success,Try}
 
+import scala.language.implicitConversions
+
+
+/*
+ Dynamodb atttibute values pickler.
+
+*/
+class AwsAttributes(a:Att, b:AttributeValue){
+  import scalaz._, Scalaz._
+  def pickle():AttributeValue = {
+    a match {
+      case St(st) => new AttributeValue(st)
+      case Bl(b)  => new AttributeValue().withBOOL(b)
+      case In(i)  => new AttributeValue().withN(i.toString)
+      case Fl(f)  => new AttributeValue(f.toString)
+      case So(Some(so)) => new AttributeValue(so)
+      case Io(Some(io)) => new AttributeValue().withN(io.toString)
+      case _ => new AttributeValue().withNULL(true)
+    }
+  }
+  def unpickle():Att = {
+    //The same mess everywehre :(
+    if      (b.isNULL != null) Nl()
+    else if (b.isBOOL != null) Bl(b.getBOOL)
+    // just fast non typed stuff ... maybe validation, \/, reader
+    else if (b.toString.startsWith("{S: Gas")) Fl(Gas)
+    else if (b.toString.startsWith("{S: Diesel")) Fl(Diesel)
+    else if (b.toString.startsWith("{S:")) St(b.getS)
+    else if (b.toString.startsWith("{N:")) b.getN.parseInt.leftMap(_=> 0).fold(In(_),In(_))
+    else if (b.toString.startsWith("{BOOL:")) Bl(b.getBOOL)
+    else if (b.toString.startsWith("{NULL:")) Nl()
+    else Nl()
+  }
+}
+
 /**
  * Wrap some functionality of aws-sdk dynamodb client as database application.
+
  */
 class Dynamodb @Inject()(conf:Configuration) extends Dba {
-
   import scalaz._, Scalaz._
-  //import scalaz.either._
+
+  type Key = java.util.Map[String,AttributeValue]
+  type Item = Map[String, AttributeValue]
 
   type ContainerInfo = Unit
-  //type Att = AttributeValue
-  //override type Entry = immutable.Map[String, Att]
-
 
   // need fallback or fail strategy
   val ep  = conf.getString("aws.endpoint").get//.getOrElse("http://localhost:8000")
@@ -34,6 +68,10 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
 
   val b:AmazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder.standard
   implicit val db:AmazonDynamoDB = b.withEndpointConfiguration(endpoint).build
+
+  // inject dynamodb style attribute values
+  implicit def attPickle(a:Att) = new AwsAttributes(a, new AttributeValue().withNULL(true))
+  implicit def attUnpickle(b:AttributeValue) = new AwsAttributes(Nl(), b)
 
   /** Generate unique identifier to be used as entries primary key */
   def nextId():String = java.util.UUID.randomUUID.toString.replace("-","")
@@ -89,85 +127,57 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   /**
    */
    def get(name:String, id:String):Res[Entry] = {
-      var req = new GetItemRequest(name, Map("id"->Attribute(id)).asJava)
+      var req = new GetItemRequest(name, Map("id"-> St(id).pickle).asJava)
 
-      toRes(db.getItem(req)).map(_.getItem.asScala.toMap)
+      toRes(db.getItem(req))
+        .map(_.getItem.asScala.toMap)
+        .map(_.map{case (k,v) => k->v.unpickle}.filter(_._2 != Nl()))
    }
 
   /**
    */
   def put(name:String, entry: Entry):Res[Entry] = {
-    // the atttibute should be already converted here!
-    val m1:Map[String, AttributeValue] = entry.map{case (k,v) => (k, v.asInstanceOf[AttributeValue])}
+    val m1:Map[String, AttributeValue] = entry.map{case (k,v) => (k, v.pickle)}
 
     val req = new PutItemRequest(name, m1.asJava, ReturnValue.ALL_OLD)
 
-    toRes(db.putItem(req)).map(r => Option(r.getAttributes).map(_.asScala.toMap).getOrElse(entry))
+    toRes(db.putItem(req))
+      .map(r => Option(r.getAttributes).map(_.asScala.toMap)
+      .map(_.map{case (k,v) => k-> v.unpickle}.filter(_._2 != Nl()))
+      .getOrElse(entry))
   }
 
   /**
    */
   def delete(name:String, id:String):Res[Entry] = {
-    var req = new DeleteItemRequest(name, Map("id" -> Attribute(id)).asJava, ReturnValue.ALL_OLD)
+    var req = new DeleteItemRequest(name, Map("id" -> St(id).pickle).asJava, ReturnValue.ALL_OLD)
 
     toRes(db.deleteItem(req)).map(_.getAttributes.asScala.toMap)
+      .map(_.map{case (k,v) => k -> v.unpickle}.filter(_._2 != Nl()))
   }
 
   /**
    */
   def entries(name:String):Res[List[Entry]] = {
-    import scala.annotation.tailrec
-    type Key = java.util.Map[String,AttributeValue]
-
     val req:ScanRequest = new ScanRequest(name).withLimit(10)
 
-    def scan(req:ScanRequest, acc:List[Entry], last:Option[Key]):Res[List[Entry]] = {
+    def scan(req:ScanRequest, acc:List[Item], last:Option[Key]):Res[List[Item]] = {
       val req1 = req.withExclusiveStartKey(last.getOrElse(null))
 
       toRes (db.scan(req1)).flatMap { s1 =>
-        val list = acc ::: s1.getItems.asScala.map(_.asScala.toMap).toList
 
-          Option(s1.getLastEvaluatedKey) match {
-            case None => \/-(list)
-            case key  => scan(req, list, key)
-          }
+        val itm:List[Item] = s1.getItems.asScala.map(_.asScala.toMap).toList
+        val list:List[Item] = acc ::: itm
+
+        Option(s1.getLastEvaluatedKey) match {
+          case None => \/-(list)
+          case key  => scan(req, list, key)
+        }
       }
     }
 
+    // Res[List[Item]] -> Res[List[Entry]]
     scan(req, List.empty, None)
-  }
-
-  def entry(e:Map[String, Any]):Map[String, AttributeValue] = {
-    e.map{case (k,v) => k-> Attribute(v)}
-  }
-
-  //Create entry as map of atttibutes
-  def entry(title:String,
-    fuel:Fuel, 
-    price:Int, 
-    neu:Boolean, 
-    mileage:Option[Int]=None, 
-    reg:Option[String]=None) = Map[String, Any](
-      "id" -> Attribute(nextId()),
-      "title" -> Attribute(title),
-      "fuel" -> Attribute(fuel),
-      "price" -> Attribute(price),
-      "new" -> Attribute(neu),
-      "mileage" -> Attribute(mileage),
-      "registration" -> Attribute(reg)
-    ).filter(_._2.asInstanceOf[AttributeValue].isNULL == null)//.filter(_._2.isNULL == null)
-
-
-  // Simple attribute value wrapper
-  object Attribute {
-    def apply(s:Any):AttributeValue = s match {
-      case st:String  => new AttributeValue(st)
-      case i:Int      => new AttributeValue().withN(i.toString)
-      case b:Boolean  => new AttributeValue().withBOOL(b)
-      case f:Fuel     => new AttributeValue(f.toString)
-      case Some(so:String)=> new AttributeValue(so)
-      case Some(io:Int)   => new AttributeValue().withN(io.toString)
-      case _              => new AttributeValue().withNULL(true)
-    }
+      .map(_.map(_.map{case (k,v) => k-> v.unpickle}.filter(_._2 != Nl())))
   }
 }

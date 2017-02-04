@@ -20,9 +20,8 @@ trait Api[T] {
   def populate()
   def exist(id:Int) // short
 
-  // return all with defined sorting order
   def get()(implicit o:Order[T]):Future[List[T]]
-  def post(e:T):Future[T]
+  def post(e:T):Future[Res[T]]
 
   def get(id:Int)
   def delete(id:Int) 

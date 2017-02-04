@@ -5,47 +5,49 @@ import store._
 
 import scala.collection.immutable.Map
 import scalaz._,Scalaz._
+
 /*
 * Schema is a set of entry markers and specific handlers.
 */
+
 object CarAdvertsSchema {
 
   implicit object carAdvHandler extends Handler[Car]{
 
+    def as[T](a:Att):T = a match {
+      case St(a) => a.asInstanceOf[T]
+      case Fl(f) => f.asInstanceOf[T]      
+      case In(i) => println(s"In att:$i");i.asInstanceOf[T]
+      case Bl(b) => b.asInstanceOf[T]
+      case Io(Some(i)) => i.asInstanceOf[T]
+      case So(Some(s)) => s.asInstanceOf[T]
+      case s => s.asInstanceOf[T]
+    }
+
     def pickle(c:Car):Entry = Map(
-      "id"  -> c.id,
-      "title" -> c.title,
-      "fuel" -> c.fuel.toString,
-      "price" -> c.price.toString,
-      "new" -> c.neu.toString,
-      "mileage" -> c.mileage.shows,
-      "reg" -> c.reg.shows)
+      "id"      -> St(c.id),
+      "title"   -> St(c.title),
+      "fuel"    -> Fl(c.fuel),
+      "price"   -> In(c.price),
+      "new"     -> Bl(c.neu),
+      "mileage" -> Io(c.mileage),
+      "reg"     -> So(c.reg))
 
-    def unpickle(e:Entry):Car = {
-      (e.get("id").map(_.toString)
-        |@| e.get("title").map(_.toString) 
-        |@| e.get("fuel").map(_ => Diesel)
-        |@| e.get("price").map(_.toString.toInt)
-        |@| e.get("new").map(_.toString.toBoolean) 
-        |@| e.get("mileage").map(_.toString.parseInt.toOption)
-        |@| e.get("reg").map(_.toString.point[Option]) ) (Car.apply) .get
-    }
+    def unpickle(e:Entry):Car = (  
+            e.get("id").map(as[String](_))
+        |@| e.get("title").map(as[String](_)) 
+        |@| e.get("fuel").map(as[Fuel](_))
+        |@| e.get("price").map(as[Int](_))
+        |@| e.get("new").map(as[Boolean](_)) 
+        |@| e.get("mileage").map(as[Int](_)).map(_.toInt).point[Option]
+        |@| e.get("reg").map(as[String](_)).point[Option]) (Car.apply).get
 
-    def entries(fid:String)(implicit dba:Dba):Res[List[Car]] = {
-      val enList:Res[List[Entry]] = dba.entries(fid)
+    def entries(fid:String)(implicit dba:Dba):Res[List[Car]] =
+      dba.entries(fid)
+        .map(list => list.map(e=> unpickle(e)))
 
-      enList.map(list => list.map(e=> unpickle(e)))
-    }
-
-    def put(fid:String,c:Car)(implicit dba:Dba):Res[Car] = {
-      val e:Entry = pickle(c)
-
-      val de = dba.entry(e)
-      // conver all fields to attributes here
-      val e1 = dba.put(fid, de)
-
-      e1.map(unpickle)
-    }
+    def put(fid:String,c:Car)(implicit dba:Dba):Res[Car] = dba.put(fid, pickle(c)).map(unpickle)
+    
   }
   
 }

@@ -31,17 +31,7 @@ class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContex
 
   def populate(): Unit = ???
 
-  def post(e:Car):Future[Car] = {
-    
-    println(s"Post the $e advert")
-
-    val x:Err \/ Car = implicitly[Handler[Car]].put(table, e)(dba)
-
-    println(s"handler result $x")
-    val dum = Car("-1","x", Gas, 1, true)
-
-    (x | dum).point[Future]
-  }
+  def post(e:Car):Future[Res[Car]] = implicitly[Handler[Car]].put(table, e)(dba).point[Future]
 
   def get()(implicit o: Order[Car]): Future[List[Car]] = {
     println(s"Get the car adverts list by $o")
@@ -51,8 +41,6 @@ class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContex
     val ord = o.toScalaOrdering
     
     (x.map( _.sorted(ord)) | List.empty[Car]).point[Future]
-
-    //List.empty[Car].point[Future]
   }
 
 }
