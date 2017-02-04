@@ -130,8 +130,12 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
       var req = new GetItemRequest(name, Map("id"-> St(id).pickle).asJava)
 
       toRes(db.getItem(req))
-        .map(_.getItem.asScala.toMap)
-        .map(_.map{case (k,v) => k->v.unpickle}.filter(_._2 != Nl()))
+        // drop null with result with disjunction 
+        // where all right things always on the right
+        .map{i => Option(i.getItem).toRightDisjunction(NotFound(s"${req.getKey}"))}
+        .flatMap(identity)
+        .map(_.asScala.toMap)
+        .map(_.map{case (k,v) => k-> v.unpickle}.filter(_._2 != Nl()))
    }
 
   /**
