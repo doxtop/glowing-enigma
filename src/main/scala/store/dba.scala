@@ -15,16 +15,16 @@ import scala.collection._
  * Check supported types in package object.
  */
 trait Dba {
-  type ContainerInfo
+  type Container
 
   def nextId():String
   def describe(name:String):String
-  def createContainer(name:String):Res[ContainerInfo]
-  def deleteContainer(name:String):Res[ContainerInfo]
+  def createContainer(name:String):Res[Container]
+  def deleteContainer(name:String):Res[Container]
 
-  def get(name:String, id:String):Res[Entry]
-  def put(name:String, entry:Entry):Res[Entry] // add update
-  def delete(name:String, id:String):Res[Entry]
-  def entries(name:String):Res[List[Entry]]
-  
+  def get(name:String, id:String)   :Res[Entry]
+  def put(name:String, entry:Entry) :Res[Entry]
+  def del(name:String, id:String)   :Res[Entry]
+
+  def entries(name:String):Res[List[Entry]]  
 }

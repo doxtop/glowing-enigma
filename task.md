@@ -24,7 +24,7 @@ Service should:
  * have functionality to delete car advert by id;
  * have validation (see required fields and fields only for used cars);
  * accept and return data in JSON format, use standard JSON date 
- format for the **first registration** field.
+ format for the **first registration** field. 
 
 ### Additional requirements
 

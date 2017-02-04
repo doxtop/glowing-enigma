@@ -1,28 +1,20 @@
 package adv
 package service
 
-import scalaz._, Scalaz._
+
 import scala.concurrent.Future
+import scalaz._,Scalaz._
+import store.{Dba,Handler}
 
 /**
-  Non-blocking REST Service Api.
-
-  resourse exist
-  methods allowed POST,GET,PUT,DELETE
-  content type provideded/accepted
-  handle json,urlencode,formdata  
-
-  timeount handler here
+ * Feed REST Service Api.
  */
 trait Api[T] {
-  // bootstrap service
-  def init()
-  def populate()
-  def exist(id:Int) // short
 
   def get()(implicit o:Order[T]):Future[List[T]]
-  def post(e:T):Future[Res[T]]
 
-  def get(id:Int)
-  def delete(id:Int) 
+  def put(e:T)        :Future[Res[T]]
+  def get(id:String)  :Future[Res[T]]
+  def del(id:String)  :Future[Res[T]]
+  def update(e:T)     :Future[Res[T]]
 }

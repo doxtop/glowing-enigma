@@ -12,7 +12,6 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
   override def configure() = {
     // :define scopes later
     bind(classOf[Dba]).to(classOf[Dynamodb])
-    bind(classOf[Kvs]).to(classOf[Store])
     bind(new TypeLiteral[Api[Car]]{}).annotatedWith(Names.named("car")).to(classOf[Adverts])
   }
 }

@@ -1,7 +1,5 @@
 package adv
-package service
-
-import store._
+package store
 
 import scala.collection.immutable.Map
 import scalaz._,Scalaz._
@@ -9,6 +7,7 @@ import scalaz._,Scalaz._
 /*
 * Schema is a set of entry markers and specific handlers.
 */
+
 object CarAdvertsSchema {
 
   implicit object carAdvHandler extends Handler[Car]{

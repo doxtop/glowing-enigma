@@ -59,7 +59,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   type Key = java.util.Map[String,AttributeValue]
   type Item = Map[String, AttributeValue]
 
-  type ContainerInfo = Unit
+  type Container = Unit
 
   // need fallback or fail strategy
   val ep  = conf.getString("aws.endpoint").get//.getOrElse("http://localhost:8000")
@@ -92,7 +92,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
    * Create Table with name specified.
    * // configure
    */
-  def createContainer(name:String):Res[ContainerInfo] = {
+  def createContainer(name:String):Res[Container] = {
     val attDef:Seq[AttributeDefinition] = Seq(
       new AttributeDefinition("id", ScalarAttributeType.S)
     )
@@ -116,7 +116,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   /**
    * Delete table with name specified.
    */
-  def deleteContainer(name:String):Res[ContainerInfo] = {
+  def deleteContainer(name:String):Res[Container] = {
     val req:DeleteTableRequest = new DeleteTableRequest(name)
     val wp = new WaiterParameters(new DescribeTableRequest(name))
     val w = db.waiters().tableNotExists()
@@ -149,7 +149,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
 
   /**
    */
-  def delete(name:String, id:String):Res[Entry] = {
+  def del(name:String, id:String):Res[Entry] = {
     var req = new DeleteItemRequest(name, Map("id" -> St(id).pickle).asJava, ReturnValue.ALL_OLD)
 
     toRes(db.deleteItem(req)).map(_.getAttributes.asScala.toMap)

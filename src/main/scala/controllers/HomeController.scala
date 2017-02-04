@@ -4,86 +4,68 @@ import play.api.mvc.{Action,Controller,BodyParsers}
 import javax.inject.Inject
 import javax.inject.Named
 
-import play.api.inject.guice._
-import play.api.inject._
 import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
+import play.api.mvc.Results.{Ok,NotFound, InternalServerError => IErr}
 
-//import com.google.inject._
-
-import adv.service.Api
-import adv._
+import adv.service.{Api,CarAdvertsFormat}
+import adv.Car
 import scalaz._, Scalaz._
 
 import scala.concurrent.{ExecutionContext,Future}
 
 /**
   * Service controller
-  * Generator fro Action DSL to speak with service by the language of
-  * service model understand(case classes)
-  * here with speak jsons 
-  *
-  * its possible to speak json all the way through
+  * Generator for Action DSL
+  * 
+  * json <-> Car
   */
 class HomeController @Inject()(@Named("car") service: Api[Car])(implicit ec: ExecutionContext) extends Controller {
 
-  implicit val carWrites = new Writes[Car]{
-    def writes(c:Car):JsValue = {
-      Json.obj(
-        "id"  -> c.id,
-        "title" -> c.title,
-        "fuel" -> c.fuel.toString,
-        "price" -> c.price,
-        "new" -> c.neu,
-        "mileage" -> c.mileage,
-        "reg" -> c.reg
-        )
-    }
-  }
-  //(unlift(Document.unapply))
-
-  implicit val fuelReads:Reads[Fuel] = new Reads[Fuel]{
-    def reads(js:JsValue) = 
-      JsSuccess(Diesel)
-  }
- 
-  implicit val carReads:Reads[Car] = (
-    (JsPath \ "id").read[String] and
-    (JsPath \ "title").read[String] and
-    ( Reads.pure(Diesel.asInstanceOf[Fuel]) ) and
-    (JsPath \ "price").read[Int] and
-    (JsPath \ "new").read[Boolean] and 
-    (JsPath \ "mileage").readNullable[Int] and
-    (JsPath \ "reg").readNullable[String]
-  ) (Car.apply _ )
+  import CarAdvertsFormat._
+  // configure timeouts
 
   def index = Action{r => Ok(html.index())}
-  def echo  = Action{r => Ok(s"Got $r")}
 
-  def delete(id: Int): Unit = ???
-  def exist(id: Int): Unit = ???
-  def get(id: Int): Unit = ???
-  
   def validateJson[A:Reads] = BodyParsers.parse.json.validate(
     _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
-  
+
+  // post an advert
   def post() = Action.async(validateJson[Car]) { implicit r =>
-    service.post(r.body)
-      .map(_.fold(l=> Ok(Json.toJson(l.toString)), r => Ok(Json.toJson(r))))
+    service.put(r.body)
+      .map(_.fold(l=> IErr(Json.toJson(l.toString)), r => Ok(Json.toJson(r))))
   }
 
-  def get = Action.async{ implicit r =>
+  // list all available adverts sorted and always ok (maybe add error)
+  def list = Action.async{ implicit r =>
     implicit val or:Order[Car] = Order.orderBy(_.id)
 
-    service.get().map{ cars =>
-      Ok(Json.toJson(cars))
-    }
-
+    service.get()
+      .map{ cars => Ok(Json.toJson(cars))}
   } 
 
-  def init(): Unit = ???
-  def populate(): Unit = ???
+  // read the advert by id
+  def get(id: String) = Action.async {implicit r => 
+    service.get(id)
+      .map(_.fold(l=>NotFound(Json.toJson(l.toString)) ,r=> Ok(Json.toJson(r))))
+  }
 
+  // remove the advert by id
+  def del(id: String) = Action.async{ implicit r =>
+    service.del(id)
+      .map(_.fold(l=> NotFound(l.toString), c => Ok(Json.toJson(c))))
+  }
+
+  // update the adver by id 
+  def put(id: String) = Action.async(parse.json) {implicit r => 
+    Json.fromJson[Car](r.body).fold(
+      invalid = { err =>
+        BadRequest(Json.toJson(err.head.toString)).point[Future]
+      },
+      valid = { car => 
+        //update the car actually 
+        service.put(car)
+          .map(_.fold(l=> NotFound(Json.toJson(l.toString)), r=> Ok(Json.toJson(r))))
+      })
+  }
 }

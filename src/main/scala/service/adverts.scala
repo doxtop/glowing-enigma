@@ -6,41 +6,34 @@ import play.api.Configuration
 
 import scala.concurrent._
 
-import store.{Dba,Handler}
+import store.{Dba,Handler,CarAdvertsSchema}
 
-/*
-
-  Error handled on that level - simple dba errors
-  should they be populated to http
-
-*/
+/**
+ *  Car adverts REST service implementation.
+ *  
+ *  Adds sorting functionality to DBA handlers which is not support sorting.
+ */
 class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContext) extends Api[Car] {
   import scalaz._, Scalaz._  
 
-  import CarAdvertsSchema._
-
   val table = "test1"
 
-  def init(): Unit = {
-    println(s"Init service. Check dba tables etc.")  
-  }
-
-  def delete(id: Int): Unit = ???
-  def exist(id: Int): Unit = ???
-  def get(id: Int): Unit = ???
-
-  def populate(): Unit = ???
-
-  def post(e:Car):Future[Res[Car]] = implicitly[Handler[Car]].put(table, e)(dba).point[Future]
+  // check dba configs, prepare tables, create names.
+  import CarAdvertsSchema._
+  implicit val hand:Handler[Car] = implicitly[Handler[Car]]
 
   def get()(implicit o: Order[Car]): Future[List[Car]] = {
     println(s"Get the car adverts list by $o")
 
-    val x:Err\/List[Car] = implicitly[Handler[Car]].entries(table)(dba)
+    val x:Err\/List[Car] = hand.entries(table)(dba)
 
     val ord = o.toScalaOrdering
     
     (x.map( _.sorted(ord)) | List.empty[Car]).point[Future]
   }
 
+  def put(e:Car)      : Future[Res[Car]] = hand.put(table, e)   (dba).point[Future]
+  def get(id: String) : Future[Res[Car]] = hand.get(table, id)  (dba).point[Future]
+  def del(id: String) : Future[Res[Car]] = hand.del(table,id)(dba).point[Future]
+  def update(e: Car)  : Future[Res[Car]] = hand.update(table,e) (dba).point[Future]
 }
