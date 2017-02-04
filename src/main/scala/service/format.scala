@@ -8,27 +8,29 @@ import play.api.libs.functional.syntax._
 import model._
 
 object CarAdvertsFormat{
+  import CarOps._
+  import FuelOps._
 
-  implicit val carWrites = new Writes[Car]{
-    def writes(c:Car):JsValue = {
-      Json.obj(
-        "id"  -> c.id,
-        "title" -> c.title,
-        "fuel" -> c.fuel.toString,
-        "price" -> c.price,
-        "new" -> c.neu,
-        "mileage" -> c.mileage,
-        "reg" -> c.reg
-        )
+  // read 
+  implicit val fuelReads:Reads[Fuel] = new Reads[Fuel]{
+    def reads(js:JsValue) = js match {
+      //case JsString(f) => implicitly[Read[Fuel]].read(f)
+      case _ => JsSuccess(Diesel)
     }
   }
-  //(unlift(Document.unapply))
+  
+  implicit val fuelWrites = Writes[Fuel](fl => JsString(fl.toString))// shows must work
 
-  implicit val fuelReads:Reads[Fuel] = new Reads[Fuel]{
-    def reads(js:JsValue) = 
-      JsSuccess(Diesel)
-  }
- 
+  implicit val carWrites:Writes[Car] = (
+    (JsPath  \ "id").write[String] and 
+    (JsPath  \ "title").write[String] and
+    (JsPath  \ "fuel").write[Fuel] and
+    (JsPath  \ "price").write[Int] and
+    (JsPath  \ "new").write[Boolean] and 
+    (JsPath  \ "mileage").writeNullable[Int] and
+    (JsPath  \ "reg").writeNullable[String]
+  ) (unlift(Car.unapply))
+
   implicit val carReads:Reads[Car] = (
     (JsPath \ "id").read[String] and
     (JsPath \ "title").read[String] and
