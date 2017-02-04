@@ -43,7 +43,7 @@ class Adverts @Inject()(@Named("car") service: Api[Car])(implicit ec: ExecutionC
     val notworking: Option[String] = r.getQueryString("ord")
 
     import CarOps._
-    // extract 
+    
     val or:Order[Car] = sort.map(orderCar).getOrElse(Order.orderBy((_:Car).id))
 
     // |+| - Order semigroup can be combined
