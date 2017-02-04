@@ -10,7 +10,6 @@ import service.{Api, Adverts}
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
   override def configure() = {
-    // :define scopes later
     bind(classOf[Dba]).to(classOf[Dynamodb])
     bind(new TypeLiteral[Api[Car]]{}).annotatedWith(Names.named("car")).to(classOf[Adverts])
   }

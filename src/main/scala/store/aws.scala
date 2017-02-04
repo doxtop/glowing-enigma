@@ -19,7 +19,6 @@ import scala.language.implicitConversions
 
 /*
  Dynamodb atttibute values pickler.
-
 */
 class AwsAttributes(a:Att, b:AttributeValue){
   import scalaz._, Scalaz._
