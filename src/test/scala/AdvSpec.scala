@@ -1,7 +1,6 @@
 package adv
 
 import org.scalatest._
-//import org.scalacheck._
 import play.api.inject.guice._
 import play.api.inject._
 

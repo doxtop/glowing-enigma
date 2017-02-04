@@ -11,7 +11,7 @@ import com.amazonaws.services.dynamodbv2.document._
 import com.amazonaws.waiters._
 
 import collection.JavaConverters._
-import scala.collection._
+import scala.collection.immutable.Map
 import scala.util.{Either,Failure,Success,Try}
 
 /**
@@ -23,8 +23,9 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   //import scalaz.either._
 
   type ContainerInfo = Unit
-  type Att = AttributeValue
+  //type Att = AttributeValue
   //override type Entry = immutable.Map[String, Att]
+
 
   // need fallback or fail strategy
   val ep  = conf.getString("aws.endpoint").get//.getOrElse("http://localhost:8000")
@@ -96,7 +97,10 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   /**
    */
   def put(name:String, entry: Entry):Res[Entry] = {
-    val req = new PutItemRequest(name, entry.asJava, ReturnValue.ALL_OLD)
+    // the atttibute should be already converted here!
+    val m1:Map[String, AttributeValue] = entry.map{case (k,v) => (k, v.asInstanceOf[AttributeValue])}
+
+    val req = new PutItemRequest(name, m1.asJava, ReturnValue.ALL_OLD)
 
     toRes(db.putItem(req)).map(r => Option(r.getAttributes).map(_.asScala.toMap).getOrElse(entry))
   }
@@ -133,13 +137,17 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     scan(req, List.empty, None)
   }
 
+  def entry(e:Map[String, Any]):Map[String, AttributeValue] = {
+    e.map{case (k,v) => k-> Attribute(v)}
+  }
+
   //Create entry as map of atttibutes
   def entry(title:String,
     fuel:Fuel, 
     price:Int, 
     neu:Boolean, 
     mileage:Option[Int]=None, 
-    reg:Option[String]=None) = immutable.Map[String,Att](
+    reg:Option[String]=None) = Map[String, Any](
       "id" -> Attribute(nextId()),
       "title" -> Attribute(title),
       "fuel" -> Attribute(fuel),
@@ -147,11 +155,12 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
       "new" -> Attribute(neu),
       "mileage" -> Attribute(mileage),
       "registration" -> Attribute(reg)
-    ).filter(_._2.isNULL == null)
+    ).filter(_._2.asInstanceOf[AttributeValue].isNULL == null)//.filter(_._2.isNULL == null)
+
 
   // Simple attribute value wrapper
   object Attribute {
-    def apply(s:Any):Att = s match {
+    def apply(s:Any):AttributeValue = s match {
       case st:String  => new AttributeValue(st)
       case i:Int      => new AttributeValue().withN(i.toString)
       case b:Boolean  => new AttributeValue().withBOOL(b)

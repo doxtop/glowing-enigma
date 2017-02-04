@@ -11,6 +11,8 @@ import scala.concurrent.Future
   methods allowed POST,GET,PUT,DELETE
   content type provideded/accepted
   handle json,urlencode,formdata  
+
+  timeount handler here
  */
 trait Api[T] {
   // bootstrap service
@@ -20,9 +22,8 @@ trait Api[T] {
 
   // return all with defined sorting order
   def get()(implicit o:Order[T]):Future[List[T]]
+  def post(e:T):Future[T]
 
   def get(id:Int)
   def delete(id:Int) 
-  def post(a:(Int,Int))
-  def post(js:String)
 }

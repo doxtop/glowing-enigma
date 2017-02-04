@@ -6,8 +6,20 @@ import play.api.Configuration
 
 import scala.concurrent._
 
-class Adverts @Inject()(conf:Configuration)(implicit ec:ExecutionContext) extends Api[Car] {
+import store.{Dba,Handler}
+
+/*
+
+  Error handled on that level - simple dba errors
+  should they be populated to http
+
+*/
+class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContext) extends Api[Car] {
   import scalaz._, Scalaz._  
+
+  import CarAdvertsSchema._
+
+  val table = "test1"
 
   def init(): Unit = {
     println(s"Init service. Check dba tables etc.")  
@@ -18,12 +30,29 @@ class Adverts @Inject()(conf:Configuration)(implicit ec:ExecutionContext) extend
   def get(id: Int): Unit = ???
 
   def populate(): Unit = ???
-  def post(js: String): Unit = ???
-  def post(a: (Int, Int)): Unit = ???
+
+  def post(e:Car):Future[Car] = {
+    
+    println(s"Post the $e advert")
+
+    val x:Err \/ Car = implicitly[Handler[Car]].put(table, e)(dba)
+
+    println(s"handler result $x")
+    val dum = Car("-1","x", Gas, 1, true)
+
+    (x | dum).point[Future]
+  }
 
   def get()(implicit o: Order[Car]): Future[List[Car]] = {
     println(s"Get the car adverts list by $o")
-    List.empty[Car].point[Future]
+
+    val x:Err\/List[Car] = implicitly[Handler[Car]].entries(table)(dba)
+
+    val ord = o.toScalaOrdering
+    
+    (x.map( _.sorted(ord)) | List.empty[Car]).point[Future]
+
+    //List.empty[Car].point[Future]
   }
 
 }

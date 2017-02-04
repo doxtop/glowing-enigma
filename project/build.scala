@@ -20,7 +20,7 @@ object Build extends Build{
       "org.scalacheck"  %% "scalacheck"   % "1.13.4"  % "test",
       "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test",
       "org.typelevel" %% "scalaz-scalatest" % "1.1.0" % "test",
-      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.0" % "test",
+      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
       "com.storm-enroute" %% "scalameter" % "0.7"
     ),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),

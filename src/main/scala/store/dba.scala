@@ -14,8 +14,8 @@ import scala.collection._
  */
 trait Dba {
   type ContainerInfo
-  type Att <: Any
-  type Entry = immutable.Map[String,Att]
+  //type Att <: Any
+  //type Entry = immutable.Map[String,Att]
 
   def nextId():String
   def describe(name:String):String
@@ -26,11 +26,14 @@ trait Dba {
   def put(name:String, entry:Entry):Res[Entry] // add update
   def delete(name:String, id:String):Res[Entry]
   def entries(name:String):Res[List[Entry]]
+  
+  // Any :(
+  def entry(e:Entry):Entry
 
   def entry(title:String, 
     fuel:Fuel, 
     price:Int, 
     neu:Boolean,
     mileage:Option[Int]=None, 
-    reg:Option[String]=None):immutable.Map[String,Att]
+    reg:Option[String]=None):immutable.Map[String,Any]
 }

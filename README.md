@@ -20,3 +20,5 @@ static routes deprecated, use DI
 AWS
 ---
 ~/.aws/credentials
+
+curl -i -X POST -H "Content-Type: application/json" -d '{"id":"777", "title":"LuckyCar", "fuel":"Diesel", "price":"10", "new":true}' localhost:9000/post
