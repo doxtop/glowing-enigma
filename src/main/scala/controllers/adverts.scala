@@ -9,7 +9,7 @@ import play.api.mvc.Results.{Ok,NotFound, InternalServerError => IErr}
 
 import adv.service.{Api,CarAdvertsFormat}
 import scalaz._, Scalaz._
-import adv._
+import adv._, model._
 
 import scala.concurrent.{ExecutionContext,Future}
 
@@ -42,30 +42,13 @@ class Adverts @Inject()(@Named("car") service: Api[Car])(implicit ec: ExecutionC
     //second parameter is always None for som reason
     val notworking: Option[String] = r.getQueryString("ord")
 
-    implicit val fo:Order[Fuel] = new Order[Fuel]{
-      def order(a:Fuel, b:Fuel):Ordering = (a,b) match {
-        case (Diesel,Diesel)  => Ordering.EQ
-        case (Gas, Gas)       => Ordering.EQ
-        case (_, Diesel)      => Ordering.GT
-        case (Diesel, _)      => Ordering.LT
-      }
-    }
-
+    import CarOps._
     // extract 
-    implicit val or:Order[Car] = sort.map{ s =>
-           if(s == "id")      Order.orderBy((_:Car).id)
-      else if(s == "title")   Order.orderBy((_:Car).title)
-      else if(s == "fuel")    Order.orderBy((_:Car).fuel)
-      else if(s == "price")   Order.orderBy((_:Car).price)
-      else if(s == "new")     Order.orderBy((_:Car).neu)
-      else if(s == "mileage") Order.orderBy((_:Car).mileage)
-      else if(s == "reg")     Order.orderBy((_:Car).reg)
-      else Order.orderBy((_:Car).id)
-    }.getOrElse(Order.orderBy((_:Car).id))
+    val or:Order[Car] = sort.map(orderCar).getOrElse(Order.orderBy((_:Car).id))
 
     // |+| - Order semigroup can be combined
 
-    service.get()
+    service.get()(or)
       .map{ cars => Ok(Json.toJson(cars))}
   } 
 

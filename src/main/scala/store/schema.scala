@@ -7,8 +7,8 @@ import scalaz._,Scalaz._
 /*
 * Schema is a set of entry markers and specific handlers.
 */
-
 object CarAdvertsSchema {
+  import model._
 
   implicit object carAdvHandler extends Handler[Car]{
     def as[T](a:Att):T = a match {

@@ -1,6 +1,7 @@
 package adv 
 
 import store._
+import model._
 import scala.collection.immutable.Map
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue

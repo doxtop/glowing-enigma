@@ -7,6 +7,7 @@ import play.api.Configuration
 import scala.concurrent._
 
 import store.{Dba,Handler,CarAdvertsSchema}
+import model.Car
 
 /**
  *  Car adverts REST service implementation.

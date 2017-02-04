@@ -6,6 +6,7 @@ import com.typesafe.config._
 
 import store.{Dba,Dynamodb}
 import service.{Api,Adverts}
+import model.Car
 
 import scala.concurrent._
 import scala.concurrent.impl._

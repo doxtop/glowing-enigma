@@ -16,6 +16,7 @@ import scala.util.{Either,Failure,Success,Try}
 
 import scala.language.implicitConversions
 
+import model._
 
 /*
  Dynamodb atttibute values pickler.

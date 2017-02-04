@@ -7,6 +7,7 @@ import com.google.inject.name.Names
 
 import store.{Dba,Dynamodb}
 import service.{Api, Adverts}
+import model.Car
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
   override def configure() = {
