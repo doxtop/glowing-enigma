@@ -15,6 +15,7 @@ import play.api.Configuration
 import play.api.inject.guice._
 
 import store._
+import store.{Entry=>E}
 
 import scalaz._, Scalaz._
 import org.typelevel.scalatest._
@@ -38,47 +39,63 @@ class DbaSpec extends FunSpec
   before { db.createContainer("test1") }
   after  { db.deleteContainer("test1") }
 
+  def demo():E = Map(
+    "id"    -> St(db.nextId),
+    "title" -> St("VW Touareg"),
+    "fuel"  -> Fl(Diesel),
+    "price" -> In(100),
+    "new"   -> Bl(true)
+  )
+
+  def demo2():E = Map(
+    "id"    -> St(db.nextId),
+    "title" -> St("VW Golf"),
+    "fuel"  -> Fl(Gas),
+    "price" -> In(1000),
+    "new"   -> Bl(true)
+  )
+
   // to add assertions later
   describe("test database application") {
 
     it("describe the table"){ info(s"${db.describe("test1")}")}
 
     it("should have functionality to add entry"){
-      val entry = db.entry("VW Touareg", Diesel, 10, true)
+      val entry = demo()
 
       db.put("test1", entry) should beRight(entry)
     }
 
     it("should have functionality to return data for single entry by id"){
-      val entry = db.entry("VW Touareg", Diesel, 10, true)
+      val entry = demo()
       db.put("test1", entry)
 
       val id = entry.find(_._1 == "id")
       id should be ('defined)
 
-      val pk = id.get._2.asInstanceOf[AttributeValue].getS
+      val pk = id.get._2
 
-      db.get("test1", pk) should beRight(entry)
+      db.get("test1", pk.toString) should beRight(entry)
     }
 
     it("shoud have functionality to delete entry by id") {
-      val entry = db.entry("VW Golf", Diesel, 10, true)
+      val entry = demo()
       val e = db.put("test1", entry)
       val id = entry.find(_._1 == "id")
       val pk = id.get._2.asInstanceOf[AttributeValue].getS // hide in store
       
-      db.delete("test1", pk) should beRight(entry)
+      db.del("test1", pk) should beRight(entry)
       
       db.get("table1", pk) should be ('left)
     }
 
     it("shoud have functionality to modify entry by id") {
-      val entry = db.entry("VW Touareg", Diesel, 10, true)
+      val entry = demo()
       db.put("test1", entry)
       val id = entry.find(_._1 == "id")
       val pk = id.get._2.asInstanceOf[AttributeValue].getS // hide in store
       
-      val upd = db.entry("VW W12", Gas, 10, false) + ("id" -> id.get._2)
+      val upd = demo2() + ("id" -> id.get._2)
 
       db.put("test1", upd)
 
@@ -96,13 +113,13 @@ class DbaSpec extends FunSpec
     it("should have functionality to return list of all entries") {
       db.entries("test1").value should be(empty)
       
-      val e1 = db.entry("VW Touareg", Diesel, 10, true)
+      val e1 = demo()
       db.put("test1", e1)
 
-      val e2 = db.entry("VW Touareg", Diesel, 10, true)
+      val e2 = demo()
       db.put("test1", e2)
 
-      val e3 = db.entry("VW Touareg", Diesel, 10, true)
+      val e3 = demo()
       db.put("test1", e3)
 
       eventually (timeout(2 seconds), interval(200 millis)){ 
