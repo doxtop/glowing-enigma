@@ -18,11 +18,11 @@ Basic usage:
 
 -H "Content-Type: application/json"
 
-  > curl -i -X GET localhost:9000/adverts
-  > curl -i -X GET localhost:9000/adverts/101
-  > curl -i -X PUT  -d '{id:"a1"}' localhost:9000/adverts/a1
-  > curl -i -X POST -d '{id:"a2"}' localhost:9000/adverts
-  > curl -i -X DELETE localhost:9000/adverts/a1
+    curl -i -X GET localhost:9000/adverts
+    curl -i -X GET localhost:9000/adverts/101
+    curl -i -X PUT  -d '{id:"a1"}' localhost:9000/adverts/a1
+    curl -i -X POST -d '{id:"a2"}' localhost:9000/adverts
+    curl -i -X DELETE localhost:9000/adverts/a1
     
 Service layer
 -------------
