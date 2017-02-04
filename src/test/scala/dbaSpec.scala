@@ -83,15 +83,43 @@ class DbaSpec extends FunSpec
       }
     }
 
-    ignore("shoud have functionality to delete entry by id") {
+    it("should fail on non existent table") {
+      val fake_table = "fake_table_x"  
+      
+      val delfail = db.del(fake_table, "") 
+      
+      delfail should be ('left)
+      delfail.leftMap(_ match {
+        case NotFound(s) => succeed
+        case other => fail(s"not expected fail $other")
+      })
+    }
+
+    it("should warn when item is not exist"){
+      val fake_id = "iamnotexist"
+
+      val delfail = db.del("test1", fake_id)
+      delfail should be ('left)
+      delfail.leftMap(_ match {
+        case NotFound(s) => succeed
+        case other => fail(s"not expected fail $other")
+      })
+    }
+
+    it("shoud have functionality to delete entry by id") {
       val entry = demo()
-      val e = db.put("test1", entry)
+      db.put("test1", entry) should beRight(entry)
+
       val id = entry.find(_._1 == "id")
-      val pk = id.get._2.asInstanceOf[AttributeValue].getS // hide in store
-      
-      db.del("test1", pk) should beRight(entry)
-      
-      db.get("table1", pk) should be ('left)
+      id should be ('defined)
+
+      id.get._2 match {
+        case St(pk) => 
+          db.del("test1", pk) should beRight(entry)
+          db.get("test1", pk) should be ('left)    
+        case _ =>
+          fail(s"wrong key attribute $id")
+      }      
     }
 
     ignore("shoud have functionality to modify entry by id") {

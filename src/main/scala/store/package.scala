@@ -5,6 +5,9 @@ import model._
 import scala.collection.immutable.Map
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException
+import scalaz._, Scalaz._
 
 /** 
  * Database application layer(package) types.
@@ -23,5 +26,16 @@ package object store {
 
   // dba implementation must treat the entry as map.
   type Entry = Map[String,Att]
+
+  // convert from try to storage result
+  import scala.util.control.NonFatal
+
+  def toRes[T](a: => T): Err \/ T = try {
+    \/-(a)
+  } catch { 
+    case n:ResourceNotFoundException => -\/(NotFound(n.getErrorMessage))
+    //case a:AmazonDynamoDBException => 
+    case NonFatal(t) => -\/(Dbe(msg=t.getMessage)) 
+  }
 
 }

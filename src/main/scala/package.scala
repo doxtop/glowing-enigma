@@ -16,12 +16,6 @@ package object adv {
 
   type Res[T] = Err \/ T
 
-  // convert from try to storage result
-  import scala.util.control.NonFatal
-
-  def toRes[T](a: => T): Err \/ T = try {
-    \/-(a)
-  } catch { case NonFatal(t) => -\/(Dbe(msg=t.getMessage)) }
 
   // breaking law 'monad' for Future
   import scala.concurrent._

@@ -17,6 +17,7 @@ import scala.util.{Either,Failure,Success,Try}
 import scala.language.implicitConversions
 
 import model._
+import adv._
 
 /*
  Dynamodb atttibute values pickler.
@@ -148,9 +149,6 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     // allowed to specify return values by ALL_OLD but this is not guranted
     val req = new PutItemRequest(name, m1.asJava, ReturnValue.ALL_OLD)
     
-    println(s"Going to put the shit: $req")
-    // will get the values that where replaced!
-
     val opRes = toRes(db.putItem(req))
       // allowed to specify return values by ALL_OLD but this is not guranted
       // all this may be empty (and will be), so just go with and origin entry 
@@ -166,11 +164,17 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   }
 
   /**
+   * Delete an entry with specified `id` from table by `name`.
    */
   def del(name:String, id:String):Res[Entry] = {
+    // looks like ALL_OLD works here
     var req = new DeleteItemRequest(name, Map("id" -> St(id).pickle).asJava, ReturnValue.ALL_OLD)
-
-    toRes(db.deleteItem(req)).map(_.getAttributes.asScala.toMap)
+ 
+    toRes(db.deleteItem(req))
+      // will not fail on non existent items
+      .map(r=> Option(r.getAttributes) \/> NotFound(s"item {id=$id} doesn't exist"))
+      .flatMap(identity)
+      .map(_.asScala.toMap)
       .map(_.map{case (k,v) => k -> v.unpickle}.filter(_._2 != Nl()))
   }
 
