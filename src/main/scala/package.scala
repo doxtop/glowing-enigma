@@ -10,6 +10,7 @@ package object adv {
   
   // storage types
   sealed trait Err
+  case object NotImplemented extends Err
   case class Dbe(name:String = "error", msg:String) extends Err
   case class NotFound(msg:String) extends Err
   case class NotGranted(msg:String) extends Err

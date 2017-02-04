@@ -4,6 +4,7 @@ package store
 import javax.inject._
 import play.api.Configuration
 
+import com.amazonaws.AmazonWebServiceRequest
 import com.amazonaws.services.dynamodbv2.{AmazonDynamoDB,AmazonDynamoDBClientBuilder}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.dynamodbv2.model._
@@ -161,6 +162,21 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
       case -\/(NotGranted(_)) => entry.right 
       case _ => opRes
     }
+  }
+
+  /**
+   * Not the part of dba api for a moment.
+   * Possible cases when large entities and to save writes capacity.
+   * 
+   * Update the item, possibly with speficied atttibutes only.
+   */
+  def upd(name:String, entry:Entry):Res[Entry] = {
+    val key:Key = Map("id" -> St("somekey").pickle).asJava
+    val att = entry.map{case (k,v) => (k, v.pickle)}
+    //No Read Capacity Units are consumed.
+    //val req = new UpdateItemRequest(name, key, att.asJava, ReturnValue.UPDATED_NEW)
+
+    -\/(NotImplemented)
   }
 
   /**

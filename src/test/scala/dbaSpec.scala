@@ -122,25 +122,30 @@ class DbaSpec extends FunSpec
       }      
     }
 
-    ignore("shoud have functionality to modify entry by id") {
+    it("shoud have functionality to modify entry by id") {
       val entry = demo()
       db.put("test1", entry)
+
       val id = entry.find(_._1 == "id")
-      val pk = id.get._2.asInstanceOf[AttributeValue].getS // hide in store
-      
-      val upd = demo2() + ("id" -> id.get._2)
+      id should be ('defined)
 
-      db.put("test1", upd)
+      id.get._2 match {
+        case St(pk) =>
+          val upd = demo2() + ("id" -> id.get._2)
 
-      val check = db.get("test1", pk)
-      
-      check should beRight(upd) 
+          db.put("test1", upd)
 
-      // just demo
-      import PartialFunctionValues._
-      check.value.valueAt("fuel") should be (new AttributeValue("Gas"))
-      check.value.valueAt("title") should be (new AttributeValue("VW W12"))
-      check.value.valueAt("new") should be (new AttributeValue().withBOOL(false))
+          val check = db.get("test1", pk)
+          check should beRight(upd) 
+
+          import PartialFunctionValues._
+          check.value.valueAt("fuel") should be (Fl(Gas))
+          check.value.valueAt("title") should be (St("VW Golf"))
+          check.value.valueAt("new") should be (Bl(true))
+
+        case _ => 
+          fail(s"wrong key attribute $id")
+      }
     }
 
     ignore("should have functionality to return list of all entries") {
