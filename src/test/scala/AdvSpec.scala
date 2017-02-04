@@ -8,6 +8,7 @@ import com.google.inject._
 import com.google.inject.name.Names
 
 import service._
+import model._
 import java.lang.Class
 
 class AdvSpec extends FlatSpecLike {

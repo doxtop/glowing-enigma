@@ -16,6 +16,7 @@ import play.api.inject.guice._
 
 import store._
 import store.{Entry=>E}
+import model._
 
 import scalaz._, Scalaz._
 import org.typelevel.scalatest._

@@ -10,6 +10,7 @@ import com.amazonaws.waiters._
 
 import collection.JavaConverters._
 
+import model._
 /*
 // [info] Obtained measurements:
 // [info] item -> (): 9.939, 6.756, 7.360, 6.860, 8.309, 7.071, 6.904, 7.020, 15.140, 10.408, 8.788, 8.451, 9.378, 8.270, 6.721, 6.740, 13.004, 11.091, 7.874, 8.024, 8.818, 7.854, 7.367, 7.605, 7.770, 7.206, 8.525, 7.415, 11.256, 7.910, 8.750, 7.870, 12.335, 7.210, 6.880, 6.781
@@ -48,13 +49,13 @@ object RangeBenchmark extends Bench.LocalTime {
     measure method "putItem" in {
       using(Gen.unit("put request time")) in { case _ =>
         val it = Map(
-          "id" -> Attribute(uuid),
-          "title" -> Attribute("title"),
-          "fuel" -> Attribute(Diesel),
-          "price" -> Attribute(100),
-          "new" -> Attribute(true),
-          "mileage" -> Attribute(100),
-          "registration" -> Attribute("01-01-1970"))
+          "id" -> new AttributeValue(uuid),
+          "title" -> new AttributeValue("title"),
+          "fuel" -> new AttributeValue(Diesel.toString),
+          "price" -> new AttributeValue().withN("100"),
+          "new" -> new AttributeValue().withBOOL(true),
+          "mileage" -> new AttributeValue().withN("100"),
+          "registration" -> new AttributeValue("01-01-1970"))
 
         db.putItem(new PutItemRequest("test1",it.asJava))
       }
