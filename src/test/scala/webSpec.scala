@@ -30,6 +30,12 @@ class ControllerSpec extends fixture.FunSpec
       val result: Future[Result] = controller.index().apply(FakeRequest())
         val body:String = contentAsString(result)
         assert(body.contains("Hello, Sailor."))
-    }    
+    }
+
+    it("should call other controllers"){ app =>
+      //app.configuration.getString("adv.title") mustBe Some("Car adverts service")
+      println(s"${app.configuration.getString("adv.title")}")
+
+    }
   }
 }

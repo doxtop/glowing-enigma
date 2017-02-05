@@ -14,5 +14,10 @@ class ApplicationSpec extends Specification {
     "send 404 on a bad request" in new WithApplication{
       route(FakeRequest(GET, "/boum")) must beSome.which (status(_) == NOT_FOUND)
     }
+
+    "work from within a browser" in new WithBrowser {
+      browser.goTo("http://localhost:" + port)
+      browser.pageSource must contain("Hello, Sailor.")
+    }
   }
 }

@@ -29,8 +29,14 @@ object Build extends Build{
     // and brake even specs2 tests 1.5.1 or 2.0.0-M1 doesn't metter
     // so any play related functionality should be tested with specs2
 
+      "org.seleniumhq.selenium" % "htmlunit-driver" % "2.23.1" % "test",
+      "org.seleniumhq.selenium" % "selenium-java" % "3.0.1" % "test",
+      "org.seleniumhq.selenium" % "selenium-support" % "3.0.1" % "test",
+
       ("com.typesafe.play" %% "play-specs2" % "2.4.8" % "test")
-        .excludeAll(ExclusionRule(organization = "org.specs2")),
+        //.excludeAll(ExclusionRule(organization = "org.specs2")),
+      .exclude("org.spec2", "spec2-core")
+      .exclude("org.spec2", "spec2-junit"),
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.specs2" %% "specs2-junit" % "3.7" % "test"
     ),
