@@ -1,37 +1,50 @@
 package adv
 
+//import javax.inject._
 import scala.concurrent.{Future,ExecutionContext}
 
 import org.scalatest._
-import org.scalatest.concurrent._
 import org.scalatestplus.play._
-
-import play.api.{Play, Application}
-import play.api.routing.sird._
-import play.api.routing._
+import play.api._
 import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.test._
+import java.io.File
 
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.scalatest.fixture
 
-import controllers._
+class ControllerSpec // extends PlaySpec
+  extends fixture.FunSpec
+  with Matchers
+  //with BaseOneAppPerTest
+  //with OneAppPerTest - di
+  //with OneAppPerSuite - di
+  //with FakeApplicationFactory
+    { this:TestSuite =>
 
-class ControllerSpec extends PlaySpec with Results with ScalaFutures with OneAppPerSuite {
+  type FixtureParam = Application
 
-  implicit override lazy val app = new GuiceApplicationBuilder()
-    .bindings(new PlayTestModule)
-    .configure(Map("s" -> "s"))
-    .router(Router.from{
-      case GET(p"/test") => 
-        Action(Results.Ok("fucking test"))
-    })
-    .build
-
-  "The OneAppPerSuite trait" must {
-    "provide a FakeApplication" in {
-      app.configuration.getString("s") mustBe Some("s")
-    }
+  override def withFixture(test: NoArgTest) = {
+    test()
   }
 
+  def withFixture(test: OneArgTest) = {
+    test(app)
+  }
+
+  lazy val app:Application = new TestAppLoader().load(ApplicationLoader.createContext(
+    new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)))
+
+    import play.api.test.Helpers._
+
+    describe("Play application"){
+      it("should fail with non injected testing support completely"){ app =>
+        intercept[java.lang.AbstractMethodError] {
+          val controller = new controllers.Index()  
+          val result: Future[Result] = controller.index().apply(FakeRequest())
+          val body:String = contentAsString(result)
+          body shouldBe("ok")
+        }
+      }    
+    }
 }

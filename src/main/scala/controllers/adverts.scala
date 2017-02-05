@@ -46,8 +46,6 @@ class Adverts @Inject()(@Named("car") service: Api[Car])(implicit ec: ExecutionC
     
     val or:Order[Car] = sort.map(orderCar).getOrElse(Order.orderBy((_:Car).id))
 
-    // |+| - Order semigroup can be combined
-
     service.get()(or)
       .map{ cars => Ok(Json.toJson(cars))}
   } 

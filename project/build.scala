@@ -29,7 +29,9 @@ object Build extends Build{
     scalacOptions ++= Seq("-feature","-deprecation","-language:postfixOps", "-target:jvm-1.8", "-encoding", "UTF-8"),
     testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
     parallelExecution in Benchmark := false,
-    logBuffered := false
+    logBuffered := false,
+    sources in (Compile, doc) := Seq.empty,
+    publishArtifact in (Compile, packageDoc) := false
   ))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin)
