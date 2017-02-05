@@ -58,6 +58,13 @@ class AwsAttributes(a:Att, b:AttributeValue){
 class Dynamodb @Inject()(conf:Configuration) extends Dba {
   import scalaz._, Scalaz._
 
+  // amazonws log level 
+  import org.slf4j.LoggerFactory
+  import ch.qos.logback.classic.{Logger=>ChLog, Level}
+
+  LoggerFactory.getLogger("org.apache.http").asInstanceOf[ChLog].setLevel(Level.WARN)
+  LoggerFactory.getLogger("com.amazonaws").asInstanceOf[ChLog].setLevel(Level.WARN)
+
   type Key = java.util.Map[String,AttributeValue]
   type Item = Map[String, AttributeValue]
 
