@@ -59,6 +59,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   import scalaz._, Scalaz._
 
   // amazonws log level 
+  // temporary hardcoded here, ch.qos logger can be replaced and this will fail.
   import org.slf4j.LoggerFactory
   import ch.qos.logback.classic.{Logger=>ChLog, Level}
 
