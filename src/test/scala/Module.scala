@@ -24,14 +24,3 @@ class TestModule() extends AbstractModule{
     bind(classOf[Api[Car]]).annotatedWith(Names.named("car")).to(classOf[Adverts])
   }
 }
-
-/**
- * Test componets binding to use in Play application context
- * with own execution context and configuration.
- */
-class PlayTestModule() extends AbstractModule{
-  override def configure() = {
-    bind(classOf[Dba]).to(classOf[Dynamodb])
-    bind(new TypeLiteral[Api[Car]]{}).annotatedWith(Names.named("car")).to(classOf[Adverts])
-  }
-}

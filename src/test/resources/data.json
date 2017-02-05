@@ -1,0 +1,64 @@
+[ 
+  {
+    "id" : "some_id",
+    "title" : "Audi A4 Avant",
+    "fuel" : "Gas",
+    "price" : 7271,
+    "new" : false,
+    "mileage" : 630400,
+    "registration" : "2012-04-23"
+  },
+  {
+    "id" : "some_id",
+    "title" : "Audi A4 Avant",
+    "fuel" : "Gas",
+    "price" : 7271,
+    "new" : false,
+    "mileage" : 630400,
+    "registration" : "2013-05-23"
+
+  },
+  {
+    "id" : "some_id",
+    "title" : "VW Touareg",
+    "fuel" : "Diesel",
+    "price" : 7271,
+    "new" : true
+  },
+  {
+    "id" : "some_id",
+    "title" : "VW Golf",
+    "fuel" : "Diesel",
+    "price" : 7271,
+    "new" : false,
+    "mileage" : 630400,
+    "registration" : "2014-06-23"
+
+  },
+  {
+    "id" : "some_id",
+    "title" : "MB C200",
+    "fuel" : "Gas",
+    "price" : 7271,
+    "new" : true
+  },
+  {
+    "id" : "some_id",
+    "title" : "Audi A7",
+    "fuel" : "Gas",
+    "price" : 9919191,
+    "new" : false,
+    "mileage" : 636212,
+    "registration" : "2015-07-23"
+
+  },
+  {
+    "id" : "some_id",
+    "title" : "BMW Z4",
+    "fuel" : "Gas",
+    "price" : 999999,
+    "new" : false,
+    "mileage" : 1021,
+    "registration" : "2016-08-23"
+  }
+]
