@@ -15,7 +15,9 @@ object Build extends Build{
       "Sonatype OSS" at "https://oss.sonatype.org/content/repositories/releases"),
     routesGenerator := InjectedRoutesGenerator,
     libraryDependencies++=Seq(
-      "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.86",
+      ("com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.86")
+        .exclude("com.amazonaws", "aws-java-sdk-kms")
+        .exclude("com.amazonaws", "aws-java-sdk-s3"),
       "org.scalaz"      %% "scalaz-core"  % "7.2.8",
       "org.scalacheck"  %% "scalacheck"   % "1.13.4"  % "test",
       "org.scalatest"   %% "scalatest"    % "3.0.1"   % "test",
