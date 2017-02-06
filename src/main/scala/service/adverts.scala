@@ -33,10 +33,7 @@ class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContex
   implicit val hand:Handler[Car] = implicitly[Handler[Car]]
 
   def get()(implicit o: Order[Car]): Future[List[Car]] = {
-    println(s"Get the car adverts list by $o")
-
     val x:Err\/List[Car] = hand.entries(table)(dba)
-
     val ord = o.toScalaOrdering
     
     (x.map( _.sorted(ord)) | List.empty[Car]).point[Future]

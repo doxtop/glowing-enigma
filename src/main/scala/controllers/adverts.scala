@@ -33,7 +33,6 @@ class Adverts @Inject()(@Named("car") service: Api[Car])(implicit ec: ExecutionC
   // post an advert
   def post() = Action.async(validateJson[Car]) { implicit r =>
     service.put(r.body)
-      //.map(toRes)
       .map(_.fold(l=> IErr(Json.toJson(l.toString)), r => Ok(Json.toJson(r))))
   }
 

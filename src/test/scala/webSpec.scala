@@ -91,9 +91,21 @@ class ControllerSpec extends fixture.FunSpec
 
       val res = call(ctl.post, req)
       
-      //status(res) shouldEqual Ok 
-      contentAsJson(res) should equal (json)
-      //(json \ "something").as[] should
+      status(res) should equal (OK)
+
+      val jsr = contentAsJson(res)
+
+      val id = (jsr \ "id").as[String]
+
+      // check that unique id was generated
+      id should not equal car.id
+
+      jsr.validate[Car] match {
+        case s:JsSuccess[Car] =>
+          val c:Car = s.get 
+          info(s"car is returned $c")
+        case e:JsError => fail(s"response must be valid $e")
+      }
     }
   }
 }
