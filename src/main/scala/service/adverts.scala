@@ -6,7 +6,7 @@ import play.api.Configuration
 
 import scala.concurrent._
 
-import store.{Dba,Handler,CarAdvertsSchema}
+import store.{Dba,Handler}
 import model.Car
 
 /**
@@ -29,7 +29,7 @@ class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContex
   }
 
   // check dba configs, prepare tables, create names.
-  import CarAdvertsSchema._
+  
   implicit val hand:Handler[Car] = implicitly[Handler[Car]]
 
   def get()(implicit o: Order[Car]): Future[List[Car]] = {

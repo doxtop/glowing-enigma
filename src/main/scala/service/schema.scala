@@ -1,14 +1,16 @@
 package adv
-package store
+package servoce
 
 import scala.collection.immutable.Map
 import scalaz._,Scalaz._
 
+import model._
+import store._
+
 /*
-* Schema is a set of entry markers and specific handlers.
-*/
+ * Schema is a set of entry markers and specific handlers.
+ */
 object CarAdvertsSchema {
-  import model._
 
   // here is the complete mess with types and attributes
 
