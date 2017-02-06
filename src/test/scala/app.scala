@@ -20,7 +20,7 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
   import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
   lazy val dba:store.Dba = new store.Dynamodb(configuration)
-  lazy val srv: service.Adverts = new service.Adverts(configuration, dba)
+  lazy val srv:service.Adverts = new service.Adverts(configuration, dba)
   lazy val adverts:Ctl = new Ctl(srv)
   lazy val index:Index = new Index()
   lazy val assets:Assets = new Assets(httpErrorHandler)

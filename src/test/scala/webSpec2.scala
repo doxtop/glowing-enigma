@@ -19,5 +19,13 @@ class ApplicationSpec extends Specification {
       browser.goTo("http://localhost:" + port)
       browser.pageSource must contain("Hello, Sailor.")
     }
+
+    // WS(url) here
+
+    "cmon" in new WithServer{
+      //running(TestServer(9000)){
+        println("?")
+      //}
+    }
   }
 }

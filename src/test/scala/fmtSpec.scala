@@ -7,10 +7,14 @@ import org.scalacheck.util._
 import org.scalacheck.Arbitrary.arbitrary
 
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 import model._
 
+/**
+ * generate samlpe data
+ */ 
 object GenCars {
-  // generate samlpe data
+  
   import java.time._
   import java.time.format._
 
@@ -34,15 +38,23 @@ object GenCars {
     mileage <- Gen.some(Gen.posNum[Int])
     reg     <- Gen.some(arbitrary[LocalDate].map(_.format(fmt)))
     } yield Car(id,title,fuel,price,false,mileage,reg)
+
+  implicit val ac:Arbitrary[Car] = Arbitrary(Gen.oneOf(usedCars, newCars))
 }
 
-class FormatSpec extends FunSpec with GeneratorDrivenPropertyChecks with Matchers with Checkers {
+class FormatSpec extends FunSpec 
+  with Matchers
+  with Checkers
+  with GeneratorDrivenPropertyChecks {
   import GenCars._
+  import service.CarAdvertsFormat._
 
-  describe("property"){
-    it("obvious"){
-      forAll { (a:String,b:String) => 
-        a.length + b.length should equal ((a+b).length)
+  describe("play json library test :)"){
+    it("should be able to parse the car"){
+      forAll ("car") { c:Car =>
+        val str = Json.toJson(c).toString
+        c == (Json.parse(str).as[Car])
+        info(s"$str")
       }    
     }  
   }
@@ -55,6 +67,12 @@ class FormatSpec extends FunSpec with GeneratorDrivenPropertyChecks with Matcher
       println(s"s1 :${usedCars.sample}")
       println(s"s2 :${newCars.sample}")
       println(s"s3 :${usedCars.sample}")
+
+      import service.CarAdvertsFormat._
+
+      val j = newCars.sample.map(Json.toJson(_)).map(_.toString).map(Json.parse(_).as[Car])
+      println(j)
+
     }
   }
 
