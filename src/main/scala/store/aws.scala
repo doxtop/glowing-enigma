@@ -69,8 +69,6 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   type Key = java.util.Map[String,AttributeValue]
   type Item = Map[String, AttributeValue]
 
-  type Container = Unit
-
   // need fallback or fail strategy
   val ep  = conf.getString("aws.endpoint").get//.getOrElse("http://localhost:8000")
   val reg = conf.getString("aws.region").get  //.getOrElse("")
@@ -89,18 +87,19 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
   /**
    * Retrieve container information.
    */
-  def describe(name:String):String = {
-    val req:DescribeTableRequest = new DescribeTableRequest().withTableName(name)
+  def describe(name:String):Res[Container] = {
+    val req:DescribeTableRequest = new DescribeTableRequest()
+      .withTableName(name)
     
-    Option(db.describeTable(req)) match {
-      case None => s"table $name doesn't exist"
-      case Some(res:DescribeTableResult) => s"${res.getTable}"
-    }
+    toRes {db.describeTable(req)}
+      .map(t => Option(t) \/> NotFound(s"Cannot do operations on a non-existent table $name"))
+      .flatMap(identity)
+      .map(_.getTable)
+      .map(_.toString)
   }
 
   /**
    * Create Table with name specified.
-   * // configure
    */
   def createContainer(name:String):Res[Container] = {
     val attDef:Seq[AttributeDefinition] = Seq(
@@ -120,7 +119,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     val wp = new WaiterParameters(new DescribeTableRequest(name))
     val w = db.waiters().tableExists
     
-    toRes {db.createTable(request); w.run(wp)}
+    toRes {val res = db.createTable(request); w.run(wp); res.toString}
   }
 
   /**
@@ -131,7 +130,7 @@ class Dynamodb @Inject()(conf:Configuration) extends Dba {
     val wp = new WaiterParameters(new DescribeTableRequest(name))
     val w = db.waiters().tableNotExists()
     
-    toRes {db.deleteTable(req); w.run(wp)} 
+    toRes {val res = db.deleteTable(req); w.run(wp); res.toString} 
   }
 
   /**

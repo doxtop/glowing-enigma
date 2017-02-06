@@ -59,22 +59,5 @@ class FormatSpec extends FunSpec
     }  
   }
 
-  describe("sample the generators") {
-    it("just info"){
-      println(s"s1 :${newCars.sample}")
-      println(s"s2 :${usedCars.sample}")
-      println(s"s3 :${newCars.sample}")
-      println(s"s1 :${usedCars.sample}")
-      println(s"s2 :${newCars.sample}")
-      println(s"s3 :${usedCars.sample}")
-
-      import service.CarAdvertsFormat._
-
-      val j = newCars.sample.map(Json.toJson(_)).map(_.toString).map(Json.parse(_).as[Car])
-      println(j)
-
-    }
-  }
-
 }
 

@@ -17,7 +17,16 @@ import model.Car
 class Adverts @Inject()(conf:Configuration, dba:Dba)(implicit ec:ExecutionContext) extends Api[Car] {
   import scalaz._, Scalaz._  
 
-  val table = "test1"
+  // more  table/index selection here
+  val table = "adverts"
+
+  // init here for the moment
+  init()
+
+  def init():Res[String] = {
+    // need handler for container types.
+    dba.describe(table) ||| dba.createContainer(table)
+  }
 
   // check dba configs, prepare tables, create names.
   import CarAdvertsSchema._

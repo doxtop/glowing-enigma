@@ -59,7 +59,18 @@ class DbaSpec extends FunSpec
   // to add assertions later
   describe("test database application") {
 
-    it("describe the table"){ info(s"${db.describe("test1")}")}
+    it("describe the table"){ 
+      val table = db.describe("test1")
+
+      table should be ('right)
+      info(s"$table")
+    }
+
+    it("should warn about non existent table "){
+      val table = db.describe("some_table")
+      //table shold be ('left)
+      info(s"$table")
+    }
 
     it("should have functionality to add entry"){
       val entry = demo()

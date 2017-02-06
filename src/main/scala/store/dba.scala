@@ -15,10 +15,9 @@ import scala.collection._
  * Check supported types in package object.
  */
 trait Dba {
-  type Container
 
   def nextId():String
-  def describe(name:String):String
+  def describe(name:String)       :Res[Container]
   def createContainer(name:String):Res[Container]
   def deleteContainer(name:String):Res[Container]
 
@@ -26,5 +25,6 @@ trait Dba {
   def put(name:String, entry:Entry) :Res[Entry]
   def del(name:String, id:String)   :Res[Entry]
 
-  def entries(name:String):Res[List[Entry]]  
+  def entries(name:String):Res[List[Entry]]
+
 }

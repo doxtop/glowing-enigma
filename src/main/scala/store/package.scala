@@ -7,6 +7,7 @@ import scala.collection.immutable.Map
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException
+import com.amazonaws.waiters.WaiterTimedOutException
 import scalaz._, Scalaz._
 
 /** 
@@ -25,6 +26,7 @@ package object store {
   case class Nl() extends Att
 
   // dba implementation must treat the entry as map.
+  type Container = String
   type Entry = Map[String,Att]
 
   // convert from try to storage result
@@ -33,8 +35,11 @@ package object store {
   def toRes[T](a: => T): Err \/ T = try {
     \/-(a)
   } catch { 
-    case n:ResourceNotFoundException => -\/(NotFound(n.getErrorMessage))
+    case n:ResourceNotFoundException  => -\/(NotFound(n.getErrorMessage))
+    case w:WaiterTimedOutException    => -\/(Timeout(w.getMessage))
+    //case w:WaiterUnrecoverableException =>
     //case a:AmazonDynamoDBException => 
+    //case a:AmazonServiceException =>
     case NonFatal(t) => -\/(Dbe(msg=t.getMessage)) 
   }
 
