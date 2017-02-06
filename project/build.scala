@@ -32,7 +32,7 @@ object Build extends Build{
       "org.seleniumhq.selenium" % "htmlunit-driver" % "2.23.1" % "test",
       "org.seleniumhq.selenium" % "selenium-java" % "3.0.1" % "test",
       "org.seleniumhq.selenium" % "selenium-support" % "3.0.1" % "test",
-
+      "com.typesafe.play" %% "play-ws" % "2.4.8" % "test",
       ("com.typesafe.play" %% "play-specs2" % "2.4.8" % "test")
         //.excludeAll(ExclusionRule(organization = "org.specs2")),
       .exclude("org.spec2", "spec2-core")

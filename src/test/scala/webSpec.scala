@@ -30,7 +30,11 @@ import scala.io._
 import org.scalatest.OptionValues._
 
 /**
- * Pure scalates specification with no Play mess works!
+ * Pure scalatest specification with no Play mess works!
+ * 
+ * Applicaiton controller specification.
+ * 
+ * Work though direct contoller `call(c,req)` or use HttpRequestHandler with `route(app, req)`.
  */
 class ControllerSpec extends fixture.FunSpec
   with BeforeAndAfter
@@ -69,7 +73,7 @@ class ControllerSpec extends fixture.FunSpec
 
     it("should list the adverts"){ ctl =>
       val r:Future[Result] = ctl.list(None,None).apply(FakeRequest())
-      println(s"${contentAsString(r)}")
+      //println(s"${contentAsString(r)}")
     }
 
     /* post an advert */
@@ -103,7 +107,7 @@ class ControllerSpec extends fixture.FunSpec
       jsr.validate[Car] match {
         case s:JsSuccess[Car] =>
           val c:Car = s.get 
-          info(s"car is returned $c")
+          info(s"advert returned: $c")
         case e:JsError => fail(s"response must be valid $e")
       }
     }
